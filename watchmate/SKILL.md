@@ -2,7 +2,7 @@
 name: watchmate
 description: Use when a user asks to discuss, explain, summarize, or answer questions about a YouTube video's content or a referenced segment, even without mentioning a transcript. Also use for transcript retrieval or search. Reuses saved captions, tries yt-dlp briefly, then optionally falls back to a configured SerpApi account. Not for video discovery alone or visual-only claims.
 license: MIT
-compatibility: Requires Python 3.10+. Uses yt-dlp for local captions; SerpApi is optional and requires the recipient's own configured credential.
+compatibility: File installation needs no Node.js, package manager, or GitHub CLI. Running the helper requires Python 3.10+; yt-dlp is optional for local captions, and SerpApi is an optional recipient-configured fallback.
 ---
 
 # YouTube Watchmate
@@ -24,7 +24,7 @@ A title or description is not a transcript. Finding a video or returning its lin
 
 ## Installation and first use
 
-During assistant-assisted installation or initial use, briefly explain: local captions work with yt-dlp alone; SerpApi is optional, requires the recipient's own account/token, and may consume that account's quota. Do not block a local retrieval on account setup or repeatedly ask after a local-only choice. Installing the skill does not execute setup or start an onboarding conversation; these instructions apply when the assistant invokes the skill.
+Installing the skill files requires no Node.js, npm, npx, GitHub CLI, Python, yt-dlp, or SerpApi account. Do not force installation of optional installer CLIs or runtime dependencies merely to place the skill files. During assistant-assisted installation or initial use, briefly explain: running the helper requires Python 3.10+; local captions use yt-dlp; SerpApi is optional, requires the recipient's own account/token, and may consume that account's quota. Do not block local-only use on account setup or repeatedly ask after a local-only choice. Installing the skill does not execute setup or start an onboarding conversation; these instructions apply when the assistant invokes the skill.
 
 For requested local setup, create `.venv` in this skill directory and install `yt-dlp==2026.10.26` with that environment's Python (`.venv/bin/python` on macOS/Linux or `.venv\Scripts\python` on Windows). Do not install globally. Run `python3 scripts/transcript.py status` from this skill directory to check availability without reading credentials or accessing the network. Status only reports presence, not validity.
 
