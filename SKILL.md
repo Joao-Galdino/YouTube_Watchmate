@@ -14,9 +14,9 @@ Use **saved transcript → yt-dlp captions → optional SerpApi fallback**. The 
 For a question about what a YouTube video says or explains, resolve the video from the supplied link or known conversation context. Reuse a successfully retrieved transcript for that video in the task's artifacts when available; otherwise run the helper's retrieval sequence before making video-specific content claims. The user does not need to say “fetch the transcript,” invoke this skill, or confirm normal retrieval and fallback within the requested scope. Ask for clarification only when the intended video or passage remains genuinely ambiguous.
 
 Examples:
-- “O que ele está explicando nesse vídeo?” → retrieve or reuse the identified video's transcript, then explain the relevant content.
-- “Por que abriu Airflow?” while discussing a known video → search its transcript and surrounding segments for the explanation, rather than substitute a generic Airflow lesson.
-- “Resume esse vídeo para mim.” → retrieve or reuse the transcript and summarize what it supports.
+- “What is being explained in this video?” → retrieve or reuse the identified video's transcript, then explain the relevant content.
+- “Why did they open Airflow?” while discussing a known video → search its transcript and surrounding segments for the explanation, rather than substitute a generic Airflow lesson.
+- “Summarize this YouTube video.” → retrieve or reuse the transcript and summarize what it supports.
 
 A title or description is not a transcript. Finding a video or returning its link alone does not require retrieval. If the question depends solely on something visible, inspect the visual content with an appropriate available tool; captions alone cannot establish silent on-screen actions. When a transcript does not explain a visible action, say so instead of inferring a reason.
 
