@@ -79,9 +79,21 @@ python3 scripts/transcript.py status
 
 ## Optional SerpApi fallback
 
-SerpApi is not required for local use. If enabled, it uses the recipient's own account and may consume that account's quota. Configure the token privately with `SERPAPI_API_KEY`, `SERPAPI_API_KEY_FILE`, or `--key-file`; never paste it into chat or pass it as a command argument. A key file contains only the token and should be readable only by its owner.
+SerpApi is not required for local use, and it is not guaranteed to have a transcript for every video. If you previously chose local-only operation, keep that preference until you explicitly decide to enable this fallback.
 
-The default key file is `$XDG_CONFIG_HOME/watchmate/api_key` (otherwise `~/.config/watchmate/api_key`) on macOS/Linux, or `%APPDATA%/watchmate/api_key` on Windows. The former `codex-youtube-transcript/api_key` default remains a compatibility fallback. To force local-only behavior, use `--fallback off`, `--provider yt-dlp`, or set `YOUTUBE_TRANSCRIPT_FALLBACK=off`.
+1. Review SerpApi's [current plans, prices, and limits](https://serpapi.com/pricing), then optionally create an account on the [official signup page](https://serpapi.com/users/sign_up). Successful uncached requests may consume account quota or incur cost under the selected plan; Watchmate does not subscribe, buy credits, or assume a free allowance.
+2. Retrieve the private token from SerpApi's [API-key dashboard](https://serpapi.com/manage-api-key). Never paste the token into an agent chat, issue, README, or command argument.
+3. Store only the token in the supported private key file: `$XDG_CONFIG_HOME/watchmate/api_key` (otherwise `~/.config/watchmate/api_key`) on macOS/Linux, or `%APPDATA%/watchmate/api_key` on Windows. On macOS/Linux, make the directory owner-only (mode 700) and the file owner-readable/writable (mode 600). Alternatively, point `SERPAPI_API_KEY_FILE` or `--key-file` at an equivalently protected file; `SERPAPI_API_KEY` is supported but is easier to expose accidentally.
+4. Run `python3 scripts/transcript.py status` from the installed skill directory. It reports whether a credential is present without reading key-file contents, validating the credential, or making a network request.
+5. Only after choosing to use the fallback, retry with the default `--provider auto --fallback auto` and ensure `YOUTUBE_TRANSCRIPT_FALLBACK=off` is not set. Watchmate preserves the exact sequence **saved cache → one bounded, no-retry yt-dlp captions attempt → at most one configured SerpApi request**. To remain local-only, keep `--fallback off`, `--provider yt-dlp`, or `YOUTUBE_TRANSCRIPT_FALLBACK=off`.
+
+The former `codex-youtube-transcript/api_key` default remains a compatibility fallback. See the official [YouTube Video Transcript API documentation](https://serpapi.com/youtube-video-transcript) for the provider contract. If you do not want to configure SerpApi, provide a transcript, SRT/VTT file, or relevant passage instead. Running the helper still requires Python 3.10+; this setup does not require Node.js or npm.
+
+## Optional integrated-browser accompaniment
+
+When the host agent exposes an integrated browser, Watchmate can accompany a supplied YouTube link: it checks the tabs exposed by that browser for the same canonical video ID, reuses a matching tab, and otherwise opens the validated user-supplied video. This avoids duplicating an already-open watch, shorts, live, embed, or `youtu.be` link. No separate “open it” request is needed unless the user has opted out of browser use.
+
+This is capability-dependent: Codex, Claude, and other Agent Skills clients do not all expose the same browser tools. Watchmate does not inspect browser profiles, cookies, history, or unexposed tabs; install extensions; or silently substitute an unrelated external browser. If the integrated surface is absent, it simply continues transcript work. It does not autoplay, click play, seek, change the timestamp, close tabs, open discovery results, or follow links found in captions unless explicitly requested. Opening a page is not evidence that the assistant viewed the video; spoken-content answers remain grounded in transcripts, while silent visual details require separate visual evidence.
 
 ## Use
 

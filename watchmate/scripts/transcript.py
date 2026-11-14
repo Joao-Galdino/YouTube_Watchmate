@@ -24,9 +24,54 @@ YTDLP_TIMEOUT = 25
 
 
 class TranscriptError(Exception):
-    def __init__(self, code, message):
+    def __init__(self, code, message, diagnostic=None):
         self.code = code
+        self.diagnostic = diagnostic
         super().__init__(message)
+
+
+def ytdlp_error(code, message, category, known_cause):
+    return TranscriptError(code, message, {
+        'provider': 'yt-dlp',
+        'category': category,
+        'known_cause': known_cause,
+    })
+
+
+def classify_ytdlp_failure(stderr):
+    """Classify only explicit yt-dlp markers without returning provider output."""
+    text = stderr[:65536].casefold() if isinstance(stderr, str) else ''
+    if any(marker in text for marker in (
+            'http error 429', 'too many requests', 'rate limit exceeded',
+            'rate-limited', 'ratelimited')):
+        return ytdlp_error(
+            'ytdlp_rate_limited',
+            'yt-dlp explicitly reported a rate limit; no automatic retry was made.',
+            'rate_limited', True)
+    if any(marker in text for marker in (
+            "sign in to confirm you're not a bot",
+            'sign in to confirm you’re not a bot',
+            'sign in to confirm you are not a bot',
+            "confirm you're not a bot",
+            'confirm you are not a bot')):
+        return ytdlp_error(
+            'ytdlp_blocked',
+            'yt-dlp explicitly reported a YouTube anti-bot access block; Watchmate does not bypass it.',
+            'blocked', True)
+    if any(marker in text for marker in (
+            'there are no subtitles for the requested languages',
+            'no subtitles for the requested language',
+            'subtitles are not available',
+            'automatic captions are not available',
+            'no automatic captions')):
+        return ytdlp_error(
+            'ytdlp_no_captions',
+            'yt-dlp explicitly reported that the requested captions are unavailable.',
+            'no_captions', True)
+    return ytdlp_error(
+        'ytdlp_failed',
+        'yt-dlp exited without usable captions; the cause could not be determined safely because raw provider output is not exposed.',
+        'unknown', False)
 
 
 def video_id(value):
@@ -289,25 +334,36 @@ def find_ytdlp():
     installed = shutil.which('yt-dlp')
     if installed:
         return installed
-    raise TranscriptError('ytdlp_missing', 'yt-dlp is not installed in this skill environment or on PATH.')
+    raise ytdlp_error(
+        'ytdlp_missing',
+        'yt-dlp is not installed in this skill environment or on PATH.',
+        'missing_dependency', True)
 
 
 def run_ytdlp(command, deadline):
     remaining = deadline - time.monotonic()
     if remaining <= 0:
-        raise TranscriptError('ytdlp_timeout', 'The bounded yt-dlp attempt timed out.')
+        raise ytdlp_error(
+            'ytdlp_timeout', 'The bounded yt-dlp attempt timed out.',
+            'timeout', True)
     env = os.environ.copy()
     for name in ('SERPAPI_API_KEY','SERPAPI_API_KEY_FILE','PYTHONPATH','PYTHONHOME'):
         env.pop(name, None)
     try:
         result = subprocess.run(command, capture_output=True, text=True, timeout=remaining, env=env, check=False)
     except subprocess.TimeoutExpired:
-        raise TranscriptError('ytdlp_timeout', 'The bounded yt-dlp attempt timed out.') from None
+        raise ytdlp_error(
+            'ytdlp_timeout', 'The bounded yt-dlp attempt timed out.',
+            'timeout', True) from None
     except (OSError, UnicodeError):
-        raise TranscriptError('ytdlp_failed', 'yt-dlp could not run successfully.') from None
+        raise ytdlp_error(
+            'ytdlp_failed',
+            'yt-dlp could not run; the cause could not be determined safely.',
+            'unknown', False) from None
     if result.returncode:
-        # Never expose stderr: it can contain signed caption URLs or proxy details.
-        raise TranscriptError('ytdlp_failed', 'yt-dlp failed; no raw download log was retained.')
+        # Inspect only for conservative markers. Never expose stderr: it can contain
+        # signed caption URLs, tokens, local paths, proxy details, or user data.
+        raise classify_ytdlp_failure(result.stderr)
     if len(result.stdout) > MAX_RESPONSE:
         raise TranscriptError('ytdlp_invalid_response', 'yt-dlp metadata exceeded the helper size limit.')
     return result.stdout
@@ -490,14 +546,19 @@ def main():
                         failure = local_failure
                 if args.provider == 'serpapi' or failure:
                     if failure and (args.fallback == 'off' or args.provider == 'yt-dlp'):
-                        raise TranscriptError(failure.code, str(failure)+' SerpApi fallback is disabled.') from None
+                        raise TranscriptError(
+                            failure.code, str(failure)+' SerpApi fallback is disabled.',
+                            failure.diagnostic) from None
                     try:
                         key = load_key(args.key_file)
                         payload = fetch_payload(vid, args.language, args.caption_type, args.title, key)
                         data = redact(normalize(payload, vid, args.language, args.caption_type), key)
                     except TranscriptError as api_failure:
                         if failure and api_failure.code == 'missing_api_key':
-                            raise TranscriptError('local_extraction_unavailable','yt-dlp attempt: '+failure.code+'. The optional SerpApi fallback is not configured. Install yt-dlp in the skill environment, provide saved captions, or configure your own API token.') from None
+                            raise TranscriptError(
+                                'local_extraction_unavailable',
+                                'yt-dlp attempt: '+failure.code+'. The optional SerpApi fallback is not configured. Install yt-dlp in the skill environment, provide saved captions, or configure your own API token.',
+                                failure.diagnostic) from None
                         prefix = 'yt-dlp attempt: '+failure.code+'. SerpApi fallback: ' if failure else ''
                         raise TranscriptError(api_failure.code,prefix+str(api_failure)) from None
                     if failure:
@@ -515,7 +576,10 @@ def main():
         print(json.dumps(result, ensure_ascii=False))
         return 0
     except TranscriptError as exc:
-        print(json.dumps({'status':'error','code':exc.code,'message':str(exc)}))
+        result = {'status':'error','code':exc.code,'message':str(exc)}
+        if exc.diagnostic is not None:
+            result['diagnostic'] = exc.diagnostic
+        print(json.dumps(result))
         return 2
     except (OSError, ValueError, TypeError, KeyError, AttributeError):
         print(json.dumps({'status':'error','code':'invalid_input_or_response','message':'The input file or provider response could not be processed safely.'}))
