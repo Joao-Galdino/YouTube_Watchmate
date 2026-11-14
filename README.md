@@ -2,11 +2,46 @@
 
 **YouTube Watchmate is a YouTube transcript companion for AI assistants.** It helps an assistant answer questions about what a video says, find relevant passages, and return timestamp links. Its provider priority is **saved transcript cache → yt-dlp captions → optional SerpApi fallback**. Local mode works without a SerpApi token.
 
-## Install
+## Install with your agent
 
-Copy the `watchmate` folder to `~/.codex/skills/` or `$CODEX_HOME/skills/`, then open a new Codex session. Copying the folder does not run anything, contact external services, or start a conversation. Python 3.10 or newer is required.
+This repository follows the open [Agent Skills specification](https://agentskills.io/specification). The skill lives in `watchmate/`, with the matching technical name `watchmate`, so compatible installers can include its helper script.
 
-YouTube Watchmate uses yt-dlp from its own `.venv` first and otherwise from `PATH`. To install the pinned local dependency without changing global packages, run from the `watchmate` folder:
+The primary installation flow is to paste this repository URL into a local coding agent that supports Agent Skills, such as Codex or Claude Code, and ask it to install the skill:
+
+```text
+Install the Agent Skill `watchmate` from https://github.com/Joao-Galdino/YouTube_Watchmate for my user account. Review SKILL.md and scripts/transcript.py before installing. Use your supported skill installer. Do not run transcript retrieval or configure SerpApi unless I ask.
+```
+
+Codex includes a skill installer that can download skills from other repositories; see the [official Codex skills documentation](https://learn.chatgpt.com/docs/build-skills). Claude Code implements the same open format; see the [official Claude Code skills documentation](https://code.claude.com/docs/en/skills).
+
+Opening the repository URL does not install or execute anything by itself. A generic web chat may not have access to a local skill directory or shell, so use a compatible local agent/client and review its proposed file changes before approving installation.
+
+### CLI alternatives
+
+GitHub CLI provides `gh skill` in preview. Install for one user account with the command matching the target agent:
+
+```bash
+gh skill install Joao-Galdino/YouTube_Watchmate watchmate --agent codex --scope user
+gh skill install Joao-Galdino/YouTube_Watchmate watchmate --agent claude-code --scope user
+```
+
+See the official [`gh skill install` reference](https://cli.github.com/manual/gh_skill_install). If your GitHub CLI does not provide `gh skill`, the supported `skills` CLI can install from the same URL and prompt for a target agent:
+
+```bash
+npx skills add https://github.com/Joao-Galdino/YouTube_Watchmate --skill watchmate --global
+```
+
+To target both Codex and Claude Code explicitly:
+
+```bash
+npx skills add https://github.com/Joao-Galdino/YouTube_Watchmate --skill watchmate --global --agent codex --agent claude-code
+```
+
+See the [`skills add` CLI reference](https://github.com/vercel-labs/skills/blob/main/docs/commands.md). These installers place the skill where the selected local agent can discover it; they do not run Watchmate or configure SerpApi.
+
+## Optional local captions setup
+
+Python 3.10 or newer is required. YouTube Watchmate uses yt-dlp from its own `.venv` first and otherwise from `PATH`. From the installed `watchmate` skill directory, install the pinned local dependency without changing global packages:
 
 macOS/Linux:
 

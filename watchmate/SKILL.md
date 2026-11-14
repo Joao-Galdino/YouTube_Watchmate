@@ -1,6 +1,8 @@
 ---
 name: watchmate
 description: Use when a user asks to discuss, explain, summarize, or answer questions about a YouTube video's content or a referenced segment, even without mentioning a transcript. Also use for transcript retrieval or search. Reuses saved captions, tries yt-dlp briefly, then optionally falls back to a configured SerpApi account. Not for video discovery alone or visual-only claims.
+license: MIT
+compatibility: Requires Python 3.10+. Uses yt-dlp for local captions; SerpApi is optional and requires the recipient's own configured credential.
 ---
 
 # YouTube Watchmate
@@ -22,7 +24,9 @@ A title or description is not a transcript. Finding a video or returning its lin
 
 ## Installation and first use
 
-During assistant-assisted installation or initial use, briefly explain: local captions work with yt-dlp alone; SerpApi is optional, requires the recipient's own account/token, and may consume that account's quota. Point to [README.md](README.md) for isolated setup, private credential configuration, and disabling fallback. Do not block a local retrieval on account setup or repeatedly ask after a local-only choice. Copying the folder does not execute setup or start an onboarding conversation; these instructions apply when the assistant invokes the skill. Run `python3 scripts/transcript.py status` to check availability without reading credentials or accessing the network. Status only reports presence, not validity.
+During assistant-assisted installation or initial use, briefly explain: local captions work with yt-dlp alone; SerpApi is optional, requires the recipient's own account/token, and may consume that account's quota. Do not block a local retrieval on account setup or repeatedly ask after a local-only choice. Installing the skill does not execute setup or start an onboarding conversation; these instructions apply when the assistant invokes the skill.
+
+For requested local setup, create `.venv` in this skill directory and install `yt-dlp==2026.10.26` with that environment's Python (`.venv/bin/python` on macOS/Linux or `.venv\Scripts\python` on Windows). Do not install globally. Run `python3 scripts/transcript.py status` from this skill directory to check availability without reading credentials or accessing the network. Status only reports presence, not validity.
 
 ## Retrieve
 
@@ -62,6 +66,6 @@ If blocked, report exactly what was tested and what remains unavailable. Offer t
 
 ## Maintenance
 
-The helper requires Python 3.10+ and uses its standard library. It finds yt-dlp in this skill's `.venv/bin/yt-dlp` (Windows: `.venv/Scripts/yt-dlp.exe`) first, then on PATH. The shareable package does not include yt-dlp or a virtual environment. For requested setup, follow the one-line isolated installation in README.md. Never silently install packages during a video question or globally upgrade dependencies. The pinned/tested yt-dlp version is 2026.10.26.
+The helper requires Python 3.10+ and uses its standard library. It finds yt-dlp in this skill's `.venv/bin/yt-dlp` (Windows: `.venv/Scripts/yt-dlp.exe`) first, then on PATH. The shareable package does not include yt-dlp or a virtual environment. Never silently install packages during a video question or globally upgrade dependencies. The pinned/tested yt-dlp version is 2026.10.26.
 
 Contracts: [yt-dlp subtitle options](https://github.com/yt-dlp/yt-dlp#subtitle-options) and [SerpApi YouTube Video Transcript API](https://serpapi.com/youtube-video-transcript). API endpoint: `https://serpapi.com/search`; engine: `youtube_video_transcript`. The normalized output excludes `search_parameters`, signed/authenticated links, and raw responses. Temporary yt-dlp metadata is deleted after the attempt. Preserve these behaviors when adapting to provider changes.

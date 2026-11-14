@@ -289,7 +289,7 @@ def find_ytdlp():
     installed = shutil.which('yt-dlp')
     if installed:
         return installed
-    raise TranscriptError('ytdlp_missing', 'yt-dlp is not installed; see README.md for the optional local setup.')
+    raise TranscriptError('ytdlp_missing', 'yt-dlp is not installed in this skill environment or on PATH.')
 
 
 def run_ytdlp(command, deadline):
@@ -497,7 +497,7 @@ def main():
                         data = redact(normalize(payload, vid, args.language, args.caption_type), key)
                     except TranscriptError as api_failure:
                         if failure and api_failure.code == 'missing_api_key':
-                            raise TranscriptError('local_extraction_unavailable','yt-dlp attempt: '+failure.code+'. The optional SerpApi fallback is not configured. Use local setup in README.md, provide saved captions, or configure your own API token.') from None
+                            raise TranscriptError('local_extraction_unavailable','yt-dlp attempt: '+failure.code+'. The optional SerpApi fallback is not configured. Install yt-dlp in the skill environment, provide saved captions, or configure your own API token.') from None
                         prefix = 'yt-dlp attempt: '+failure.code+'. SerpApi fallback: ' if failure else ''
                         raise TranscriptError(api_failure.code,prefix+str(api_failure)) from None
                     if failure:
